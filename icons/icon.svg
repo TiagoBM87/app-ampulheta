@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Ampulheta">
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffa726" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#ffa726" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="sand" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffd180"/>
+      <stop offset="100%" stop-color="#f57c00"/>
+    </linearGradient>
+    <linearGradient id="frame" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffd08a"/>
+      <stop offset="100%" stop-color="#f57c00"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="512" height="512" fill="#0f1115"/>
+  <circle cx="256" cy="256" r="210" fill="url(#glow)"/>
+
+  <!-- Corpo de vidro -->
+  <path d="M172 122 H340 L256 256 L340 390 H172 L256 256 Z"
+        fill="#ffffff" fill-opacity="0.07"
+        stroke="#ffffff" stroke-opacity="0.22" stroke-width="8" stroke-linejoin="round"/>
+
+  <!-- Areia superior e inferior -->
+  <path d="M196 138 H316 L256 248 Z" fill="url(#sand)"/>
+  <path d="M256 268 L316 374 H196 Z" fill="url(#sand)"/>
+
+  <!-- Fluxo central -->
+  <rect x="252" y="248" width="8" height="30" rx="4" fill="#ffa726"/>
+
+  <!-- Armação -->
+  <rect x="148" y="86" width="216" height="34" rx="12" fill="url(#frame)"/>
+  <rect x="148" y="392" width="216" height="34" rx="12" fill="url(#frame)"/>
+</svg>

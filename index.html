@@ -2,14 +2,27 @@
 <html lang="pt-BR" data-theme="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Timer Ampulheta</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="description" content="Timer visual em formato de ampulheta, com presets, som, notificações e temas.">
+    <meta name="theme-color" content="#0f1115" id="theme-color-meta">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Ampulheta">
+    <title>Ampulheta — Timer</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+    <link rel="icon" href="icons/icon-192.png" sizes="192x192" type="image/png">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
     <script>
         // Aplica o tema salvo antes da renderização para evitar "flash" de tema.
         try {
             const savedTheme = localStorage.getItem('ampulheta:theme');
             if (savedTheme === 'light' || savedTheme === 'dark') {
                 document.documentElement.dataset.theme = savedTheme;
+            }
+            if (localStorage.getItem('ampulheta:count') === 'hidden') {
+                document.documentElement.dataset.count = 'hidden';
             }
         } catch (e) { /* localStorage indisponível */ }
     </script>
@@ -18,6 +31,18 @@
 <body>
     <!-- Barra de preferências -->
     <div class="toolbar">
+        <button id="count-toggle" class="icon-btn" type="button" aria-pressed="true" aria-label="Ocultar contagem numérica" title="Contagem visível">
+            <svg class="icon icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/>
+                <circle cx="12" cy="12" r="3"/>
+            </svg>
+            <svg class="icon icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M9.9 4.24A9.1 9.1 0 0 1 12 4c6.5 0 10 7 10 7a18.6 18.6 0 0 1-2.16 3.19"/>
+                <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C5.5 20 2 13 2 13a18.6 18.6 0 0 1 5.06-5.94"/>
+                <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/>
+                <line x1="2" y1="2" x2="22" y2="22"/>
+            </svg>
+        </button>
         <button id="sound-toggle" class="icon-btn" type="button" aria-pressed="true" aria-label="Desativar som" title="Som ativado">
             <svg class="icon sound-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M11 5 6 9H3v6h3l5 4V5z"/>
@@ -78,18 +103,86 @@
         </button>
 
         <div id="hourglass-wrapper" role="button" tabindex="0" aria-label="Virar a ampulheta e reiniciar a contagem">
-            <div id="hourglass">
-                <!-- Parte superior da ampulheta -->
-                <div class="glass top-glass">
-                    <div class="sand top-sand"></div>
-                </div>
-                <!-- Fluxo de areia -->
-                <div class="stream" aria-hidden="true"></div>
-                <!-- Parte inferior da ampulheta -->
-                <div class="glass bottom-glass">
-                    <div class="sand bottom-sand"></div>
-                </div>
-            </div>
+            <svg id="hourglass" viewBox="0 0 200 340" aria-hidden="true" focusable="false">
+                <defs>
+                    <linearGradient id="frameGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" style="stop-color: var(--accent-2)"/>
+                        <stop offset="100%" style="stop-color: var(--accent)"/>
+                    </linearGradient>
+                    <linearGradient id="sandGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" style="stop-color: var(--sand-light)"/>
+                        <stop offset="55%" style="stop-color: var(--sand-mid)"/>
+                        <stop offset="100%" style="stop-color: var(--sand-dark)"/>
+                    </linearGradient>
+                    <linearGradient id="streamGrad" gradientUnits="userSpaceOnUse" x1="100" y1="170" x2="100" y2="270">
+                        <stop offset="0%" style="stop-color: var(--sand-mid)"/>
+                        <stop offset="100%" style="stop-color: var(--sand-mid); stop-opacity: 0"/>
+                    </linearGradient>
+                    <linearGradient id="glassGrad" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" style="stop-color: var(--glass-a)"/>
+                        <stop offset="45%" style="stop-color: var(--glass-b)"/>
+                        <stop offset="100%" style="stop-color: var(--glass-a)"/>
+                    </linearGradient>
+
+                    <!-- Recortes internos dos dois vidros -->
+                    <clipPath id="bulb-top">
+                        <path d="M44 52 C44 44 50 38 58 38 L142 38 C150 38 156 44 156 52
+                                 C156 94 124 128 106 160 C105 163 105 167 106 170 L94 170
+                                 C95 167 95 163 94 160 C76 128 44 94 44 52 Z"/>
+                    </clipPath>
+                    <clipPath id="bulb-bottom">
+                        <path d="M94 170 C95 173 95 177 94 180 C76 212 44 246 44 288
+                                 C44 296 50 302 58 302 L142 302 C150 302 156 296 156 288
+                                 C156 246 124 212 106 180 C105 177 105 173 106 170 Z"/>
+                    </clipPath>
+                </defs>
+
+                <!-- Hastes laterais (atrás do vidro) -->
+                <rect class="post" x="30" y="38" width="11" height="256" rx="5.5"/>
+                <rect class="post" x="159" y="38" width="11" height="256" rx="5.5"/>
+
+                <!-- Corpo de vidro -->
+                <path class="glass-body" d="M44 52 C44 44 50 38 58 38 L142 38 C150 38 156 44 156 52
+                        C156 94 124 128 106 160 C105 163 105 167 106 170
+                        C105 173 105 177 106 180 C124 212 156 246 156 288
+                        C156 296 150 302 142 302 L58 302 C50 302 44 296 44 288
+                        C44 246 76 212 94 180 C95 177 95 173 94 170
+                        C95 167 95 163 94 160 C76 128 44 94 44 52 Z"/>
+
+                <!-- Areia do vidro superior (escoa para baixo) -->
+                <g clip-path="url(#bulb-top)">
+                    <path class="sand top-sand" d="M10 38 L100 170 L190 38 Z"/>
+                </g>
+
+                <!-- Fio de areia e grãos caindo -->
+                <path class="stream" d="M100 170 L100 268"/>
+                <g class="grains" clip-path="url(#bulb-bottom)">
+                    <circle class="grain grain-a" cx="99.2" cy="173" r="1.7"/>
+                    <circle class="grain grain-b" cx="100.7" cy="173" r="1.4"/>
+                    <circle class="grain grain-c" cx="100" cy="173" r="1.1"/>
+                </g>
+
+                <!-- Areia acumulada no vidro inferior -->
+                <g clip-path="url(#bulb-bottom)">
+                    <path class="sand bottom-sand" d="M10 302 L100 170 L190 302 Z"/>
+                </g>
+
+                <!-- Contorno e reflexos do vidro -->
+                <path class="glass-outline" d="M44 52 C44 44 50 38 58 38 L142 38 C150 38 156 44 156 52
+                        C156 94 124 128 106 160 C105 163 105 167 106 170
+                        C105 173 105 177 106 180 C124 212 156 246 156 288
+                        C156 296 150 302 142 302 L58 302 C50 302 44 296 44 288
+                        C44 246 76 212 94 180 C95 177 95 173 94 170
+                        C95 167 95 163 94 160 C76 128 44 94 44 52 Z"/>
+                <path class="glass-shine" d="M64 62 C57 86 66 112 84 140"/>
+                <path class="glass-shine" d="M136 278 C143 254 134 228 116 200"/>
+                <path class="glass-shine glass-shine-faint" d="M64 278 C57 254 66 228 84 200"/>
+                <path class="glass-shine glass-shine-faint" d="M136 62 C143 86 134 112 116 140"/>
+
+                <!-- Discos de madeira -->
+                <rect class="disc" x="18" y="22" width="164" height="26" rx="13"/>
+                <rect class="disc" x="18" y="292" width="164" height="26" rx="13"/>
+            </svg>
         </div>
 
         <h2 id="time-left" role="timer" aria-live="off">00:00</h2>

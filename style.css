@@ -16,9 +16,13 @@
     --success: #66bb6a;
     --success-surface: rgba(102, 187, 106, 0.12);
     --border: rgba(255, 255, 255, 0.1);
-    --glass: linear-gradient(100deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.03) 42%, rgba(255, 255, 255, 0.11));
-    --glass-frame: linear-gradient(180deg, #ffd08a, #f57c00);
-    --sand: linear-gradient(180deg, #ffd180, #ff9800 60%, #f57c00);
+    --sand-light: #ffd180;
+    --sand-mid: #ffb74d;
+    --sand-dark: #f57c00;
+    --glass-a: rgba(255, 255, 255, 0.16);
+    --glass-b: rgba(255, 255, 255, 0.04);
+    --glass-line: rgba(255, 255, 255, 0.34);
+    --glass-shine: rgba(255, 255, 255, 0.85);
     --shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
     --glow: rgba(255, 167, 38, 0.22);
     --ring: 0 0 0 3px rgba(255, 167, 38, 0.25);
@@ -39,9 +43,13 @@
     --success: #2e7d32;
     --success-surface: rgba(46, 125, 50, 0.1);
     --border: rgba(42, 33, 20, 0.14);
-    --glass: linear-gradient(100deg, rgba(90, 60, 20, 0.14), rgba(90, 60, 20, 0.03) 42%, rgba(90, 60, 20, 0.12));
-    --glass-frame: linear-gradient(180deg, #ffb74d, #e65100);
-    --sand: linear-gradient(180deg, #ffb74d, #ef6c00 60%, #d84315);
+    --sand-light: #ffcc80;
+    --sand-mid: #ffb74d;
+    --sand-dark: #e65100;
+    --glass-a: rgba(90, 60, 20, 0.16);
+    --glass-b: rgba(90, 60, 20, 0.03);
+    --glass-line: rgba(90, 60, 20, 0.32);
+    --glass-shine: rgba(120, 80, 30, 0.35);
     --shadow: 0 24px 60px rgba(90, 60, 20, 0.18);
     --glow: rgba(230, 81, 0, 0.18);
     --ring: 0 0 0 3px rgba(230, 81, 0, 0.2);
@@ -69,7 +77,9 @@ body {
     min-height: 100vh;
     min-height: 100dvh;
     overflow-x: hidden;
+    overscroll-behavior-y: contain; /* Evita "pull to refresh" durante o timer */
     touch-action: manipulation; /* Otimiza interações de toque mobile */
+    -webkit-text-size-adjust: 100%;
     transition: background-color 0.3s ease, color 0.3s ease;
 }
 
@@ -82,6 +92,11 @@ body {
     min-height: 100vh;
     min-height: 100dvh;
     padding: 88px 20px 40px;
+    padding:
+        calc(88px + env(safe-area-inset-top))
+        calc(20px + env(safe-area-inset-right))
+        calc(40px + env(safe-area-inset-bottom))
+        calc(20px + env(safe-area-inset-left));
     text-align: center;
 }
 
@@ -95,7 +110,7 @@ body {
 .toolbar {
     position: fixed;
     top: max(16px, env(safe-area-inset-top));
-    right: 16px;
+    right: max(16px, env(safe-area-inset-right));
     display: flex;
     gap: 10px;
     z-index: 10;
@@ -149,6 +164,12 @@ body {
 #sound-toggle.is-muted .sound-on { display: none; }
 #sound-toggle.is-muted .sound-off { display: block; }
 #sound-toggle.is-muted { color: var(--muted); }
+
+/* Alternância do ícone da contagem numérica */
+.icon-eye-off { display: none; }
+#count-toggle.is-off .icon-eye { display: none; }
+#count-toggle.is-off .icon-eye-off { display: block; }
+#count-toggle.is-off { color: var(--muted); }
 
 /* ============================================================
    Tela de configuração
@@ -239,6 +260,10 @@ h1 {
 }
 
 .preset-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
     padding: 10px 18px;
     border-radius: 999px;
     border: 1px solid var(--border);
@@ -296,10 +321,11 @@ h1 {
 .back-btn {
     position: fixed;
     top: max(16px, env(safe-area-inset-top));
-    left: 16px;
+    left: max(16px, env(safe-area-inset-left));
     display: flex;
     align-items: center;
     gap: 6px;
+    min-height: 44px;
     padding: 10px 16px 10px 12px;
     border-radius: 14px;
     border: 1px solid var(--border);
@@ -330,7 +356,7 @@ h1 {
 /* Componente Ampulheta */
 #hourglass-wrapper {
     position: relative;
-    padding: 36px 42px;
+    padding: 32px 42px 30px;
     border-radius: 28px;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent; /* Remove highlight azul no mobile */
@@ -354,97 +380,120 @@ h1 {
 #hourglass {
     position: relative;
     z-index: 1;
-    display: flex;
-    flex-direction: column;
-    width: clamp(120px, 34vw, 160px);
-    aspect-ratio: 1 / 2;
+    display: block;
+    width: clamp(132px, 37vw, 178px);
+    height: auto;
+    overflow: visible;
+    transform-origin: center;
     filter: drop-shadow(0 18px 24px rgba(0, 0, 0, 0.28));
     /* A transição do giro é injetada via JS */
 }
 
-/* Armação superior e inferior */
-#hourglass::before,
-#hourglass::after {
-    content: '';
-    position: absolute;
-    left: -8%;
-    width: 116%;
-    height: 12px;
-    border-radius: 4px;
-    background: var(--glass-frame);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    z-index: 3;
+/* Vidro */
+#hourglass .glass-body {
+    fill: url(#glassGrad);
 }
 
-#hourglass::before { top: -7px; }
-#hourglass::after { bottom: -7px; }
-
-.glass {
-    position: relative;
-    width: 100%;
-    height: 50%;
-    overflow: hidden;
-    background: var(--glass);
+#hourglass .glass-outline {
+    fill: none;
+    stroke: var(--glass-line);
+    stroke-width: 3.5;
+    stroke-linejoin: round;
 }
 
-/* Máscaras geométricas para criar o formato do vidro */
-.top-glass { clip-path: polygon(0 0, 100% 0, 50% 100%); }
-.bottom-glass { clip-path: polygon(50% 0, 100% 100%, 0 100%); }
-
-.sand {
-    position: absolute;
-    left: 0;
-    bottom: 0;
-    width: 100%;
-    height: 100%;
-    background: var(--sand);
-    z-index: 1;
+#hourglass .glass-shine {
+    fill: none;
+    stroke: var(--glass-shine);
+    stroke-width: 5;
+    stroke-linecap: round;
+    opacity: 0.55;
 }
 
-.top-sand {
+#hourglass .glass-shine-faint {
+    opacity: 0.3;
+}
+
+/* Armação de madeira */
+#hourglass .disc {
+    fill: url(#frameGrad);
+}
+
+#hourglass .post {
+    fill: var(--accent);
+    opacity: 0.75;
+}
+
+/* Areia */
+#hourglass .sand {
+    fill: url(#sandGrad);
+    transform-box: fill-box;
     transform-origin: bottom;
 }
 
-.bottom-sand {
-    transform-origin: bottom;
+#hourglass .top-sand {
+    transform: scaleY(1);
+}
+
+#hourglass .bottom-sand {
     transform: scaleY(0);
 }
 
-/* Fluxo de areia no centro */
-.stream {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    width: 3px;
-    height: 32%;
-    border-radius: 0 0 3px 3px;
-    background: linear-gradient(180deg, var(--accent-2), var(--accent) 40%, transparent);
-    transform: translateX(-50%) scaleY(0);
-    transform-origin: top;
+/* Fio de areia no centro */
+#hourglass .stream {
+    fill: none;
+    stroke: url(#streamGrad);
+    stroke-width: 2.6;
+    stroke-linecap: round;
     opacity: 0;
-    z-index: 2;
-    pointer-events: none;
-    transition: opacity 0.25s ease, transform 0.25s ease;
+    transition: opacity 0.25s ease;
 }
 
 #hourglass.running .stream {
-    opacity: 0.85;
-    transform: translateX(-50%) scaleY(1);
+    opacity: 0.9;
     animation: stream-pulse 1.1s ease-in-out infinite;
 }
 
+/* Grãos que caem dentro do vidro inferior */
+#hourglass .grain {
+    fill: var(--sand-mid);
+    opacity: 0;
+}
+
+#hourglass.running .grain {
+    animation: grain-fall 1.4s linear infinite;
+}
+
+#hourglass .grain-b { animation-delay: 0.45s; }
+#hourglass .grain-c { animation-delay: 0.9s; }
+
 @keyframes stream-pulse {
     0%, 100% { opacity: 0.35; }
-    50% { opacity: 0.9; }
+    50% { opacity: 0.95; }
+}
+
+@keyframes grain-fall {
+    0% { transform: translateY(0); opacity: 0; }
+    12% { opacity: 0.9; }
+    82% { opacity: 0.9; }
+    100% { transform: translateY(96px); opacity: 0; }
 }
 
 /* Mostrador de tempo e animação final */
 #time-left {
-    margin-top: 32px;
+    margin-top: 30px;
     font-size: clamp(2.4rem, 9vw, 3.4rem);
     font-weight: 700;
     font-variant-numeric: tabular-nums;
     letter-spacing: 0.04em;
+}
+
+/* Modo "só ampulheta": esconde a contagem e dá mais destaque ao desenho */
+:root[data-count="hidden"] #time-left {
+    display: none;
+}
+
+:root[data-count="hidden"] #hourglass {
+    width: clamp(152px, 44vw, 208px);
 }
 
 #feedback {
@@ -471,6 +520,11 @@ h1 {
 @media (max-width: 420px) {
     .screen {
         padding: 84px 16px 32px;
+        padding:
+            calc(84px + env(safe-area-inset-top))
+            calc(16px + env(safe-area-inset-right))
+            calc(32px + env(safe-area-inset-bottom))
+            calc(16px + env(safe-area-inset-left));
     }
 
     #time-input {
@@ -485,7 +539,7 @@ h1 {
     #unit-select {
         margin-left: 8px;
         padding-left: 10px;
-        font-size: 0.9rem;
+        font-size: 1rem; /* >= 16px evita zoom automático no iOS */
     }
 
     .preset-btn {
@@ -507,10 +561,87 @@ h1 {
     }
 }
 
+/* Telas baixas (principalmente celular na horizontal) */
+@media (max-height: 560px) {
+    .screen {
+        padding: 68px 16px 20px;
+        padding:
+            calc(68px + env(safe-area-inset-top))
+            calc(16px + env(safe-area-inset-right))
+            calc(20px + env(safe-area-inset-bottom))
+            calc(16px + env(safe-area-inset-left));
+    }
+
+    h1 {
+        font-size: 1.8rem;
+        margin-bottom: 6px;
+    }
+
+    .screen > p {
+        display: none; /* Ganha altura; o campo já é autoexplicativo */
+    }
+
+    .input-group {
+        margin-bottom: 14px;
+    }
+
+    .time-field {
+        padding: 2px 14px 2px 18px;
+    }
+
+    #time-input {
+        font-size: 2.1rem;
+    }
+
+    .presets {
+        gap: 8px;
+        margin-bottom: 16px;
+    }
+
+    .preset-btn {
+        min-height: 40px;
+        padding: 8px 14px;
+        font-size: 0.85rem;
+    }
+
+    .primary-btn {
+        padding: 13px 38px;
+        font-size: 1.05rem;
+    }
+
+    #hourglass-wrapper {
+        padding: 20px 28px;
+    }
+
+    #hourglass {
+        width: clamp(84px, 24vh, 120px);
+    }
+
+    /* No modo "só ampulheta", o desenho cresce mas ainda cabe na tela baixa. */
+    :root[data-count="hidden"] #hourglass {
+        width: clamp(100px, 30vh, 146px);
+    }
+
+    #time-left {
+        margin-top: 10px;
+        font-size: clamp(1.8rem, 8vh, 2.4rem);
+    }
+
+    #feedback {
+        margin-top: 10px;
+        padding: 8px 18px;
+        font-size: 0.95rem;
+    }
+}
+
 /* Respeita quem prefere menos movimento (mantém a areia, remove o pulso) */
 @media (prefers-reduced-motion: reduce) {
     #feedback,
     #hourglass.running .stream {
         animation: none;
+    }
+
+    #hourglass .grain {
+        display: none;
     }
 }
