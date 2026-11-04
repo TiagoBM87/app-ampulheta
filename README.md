@@ -7,9 +7,11 @@ Timer visual em formato de ampulheta, feito com HTML, CSS e JavaScript puro — 
 - Duração de **1 a 60 segundos ou minutos** (limite aplicado automaticamente).
 - **Presets rápidos**: 30s, 1 min, 5 min, 10 min, 30 min e 60 min.
 - Animação de areia escoando de cima para baixo, proporcional ao tempo escolhido.
+- **Visual realista**: areia em tons naturais (bege/dourado), preenchimento uniforme e proporcional do vidro inferior e armação de madeira com veios e volume.
 - **Ampulheta em destaque**: ocupa cerca de **80% da altura da tela** (limitada pela largura no celular) e mantém a **posição fixa** quando o aviso de tempo esgotado aparece.
 - Contador digital no formato `MM:SS`, com cálculo baseado no relógio real (sem atraso acumulado).
 - **Modo "só ampulheta"**: o botão de olho na barra superior oculta a contagem numérica e destaca o desenho.
+- **Reinício automático**: o botão de repetição na barra superior faz o timer recomeçar sozinho ao terminar, mantendo a mesma duração. A preferência é salva.
 - Toque/clique na ampulheta para **virá-la e reiniciar** o tempo (também via teclado: `Enter` ou `Espaço`).
 - **Alarme sonoro** ao final, gerado pela Web Audio API (sem arquivos de áudio).
 - **Notificação do navegador** ao terminar, quando a permissão é concedida.
@@ -27,6 +29,7 @@ Timer visual em formato de ampulheta, feito com HTML, CSS e JavaScript puro — 
 3. Clique em **Iniciar Timer**.
 4. Durante a contagem, clique/toque na ampulheta para reiniciar o tempo ou use **Voltar** para reconfigurar.
 5. Use o botão de **olho** na barra superior para ocultar ou mostrar a contagem numérica. A preferência fica salva.
+6. Ative o botão de **repetição** na barra superior para reiniciar o timer automaticamente ao terminar. Desative quando quiser que ele pare no zero.
 
 Para testar os recursos de PWA (instalação e offline), sirva a pasta por HTTP em `localhost`:
 
@@ -67,12 +70,13 @@ app-ampulheta/
 
 - `index.html` define duas telas: a de **configuração** (`#setup-screen`) e a de **execução** (`#timer-screen`), alternadas pela classe `.hidden`.
 - A ampulheta é um **SVG inline** com curvas suaves: os vidros são recortados por `clipPath`, a areia é animada via `transform: scaleY()` com `transform-box: fill-box`, e o fio/grãos de areia usam animações CSS. O desenho inteiro gira a cada virada.
+- A areia usa um gradiente em tons de areia natural. O nível do vidro inferior sobe de forma uniforme e proporcional ao esvaziamento do topo (100%/0% → 50%/50% → 0%/100%), com a mesma duração e curva linear. A armação (discos e hastes) usa gradientes de madeira e padrões de veios (`<pattern>`), com variação de tom para dar volume de peça torneada.
 - A tela de execução usa **CSS Grid** com uma linha flexível para a ampulheta e um rodapé de altura reservada. O aviso "Tempo Esgotado!" ocupa o espaço dele mesmo antes de aparecer (`visibility: hidden`), então nada se desloca quando o tempo termina.
 - `script.js` sincroniza a duração da transição CSS com o tempo escolhido, de modo que a areia termina de escoar exatamente quando o tempo zera.
 - O contador usa um timestamp de término (`Date.now() + duração`) em vez de decrementar a cada segundo, evitando desvio causado por abas em segundo plano.
 - Ao virar a ampulheta, ela gira 180° por 0,6s. Como o desenho é simétrico, a rotação volta a 0° logo depois, sem salto perceptível, e a contagem reinicia.
 - O alarme é sintetizado com `OscillatorNode` + `GainNode` da Web Audio API. O contexto de áudio é desbloqueado no clique em **Iniciar Timer**, respeitando as políticas dos navegadores.
-- Tema, som e visibilidade da contagem são salvos em `localStorage` (`ampulheta:theme`, `ampulheta:sound` e `ampulheta:count`).
+- Tema, som, visibilidade da contagem e reinício automático são salvos em `localStorage` (`ampulheta:theme`, `ampulheta:sound`, `ampulheta:count` e `ampulheta:auto`).
 - O `sw.js` faz cache do app shell na instalação, usa **rede primeiro** para navegação (garantindo atualizações) e **cache primeiro com revalidação** para os demais recursos, permitindo abrir offline.
 
 ## 📱 Decisões de responsividade

@@ -21,6 +21,7 @@ const feedback = document.getElementById('feedback');
 const themeToggle = document.getElementById('theme-toggle');
 const soundToggle = document.getElementById('sound-toggle');
 const countToggle = document.getElementById('count-toggle');
+const autoToggle = document.getElementById('auto-toggle');
 
 /* ============================================================
    Estado
@@ -32,6 +33,8 @@ let countdownInterval = null;
 let isAnimatingFlip = false;
 let soundEnabled = true;
 let countVisible = true;
+let autoRestart = false;
+let autoRestartTimeout = null;
 let audioCtx = null;
 
 const MAX_UNITS = 60; // 60 segundos ou 60 minutos
@@ -77,6 +80,11 @@ function initPreferences() {
         countVisible = false;
     }
     updateCountButton();
+
+    if (readPref('ampulheta:auto') === 'on') {
+        autoRestart = true;
+    }
+    updateAutoButton();
 }
 
 themeToggle.addEventListener('click', () => {
@@ -121,6 +129,30 @@ countToggle.addEventListener('click', () => {
     countVisible = !countVisible;
     writePref('ampulheta:count', countVisible ? 'visible' : 'hidden');
     updateCountButton();
+});
+
+function updateAutoButton() {
+    autoToggle.classList.toggle('is-on', autoRestart);
+    autoToggle.setAttribute('aria-pressed', String(autoRestart));
+    autoToggle.setAttribute('aria-label', autoRestart ? 'Desativar reinício automático' : 'Ativar reinício automático');
+    autoToggle.title = autoRestart ? 'Reinício automático ativado' : 'Reinício automático desativado';
+}
+
+function clearAutoRestart() {
+    if (autoRestartTimeout !== null) {
+        clearTimeout(autoRestartTimeout);
+        autoRestartTimeout = null;
+    }
+}
+
+autoToggle.addEventListener('click', () => {
+    autoRestart = !autoRestart;
+    writePref('ampulheta:auto', autoRestart ? 'on' : 'off');
+    updateAutoButton();
+
+    if (!autoRestart) {
+        clearAutoRestart();
+    }
 });
 
 /* ============================================================
@@ -264,6 +296,7 @@ startBtn.addEventListener('click', () => {
 
     timeInput.value = value;
     totalTime = value * unitMultiplier();
+    clearAutoRestart();
 
     // Desbloqueia o áudio dentro do gesto do usuário.
     getAudioContext();
@@ -276,6 +309,7 @@ startBtn.addEventListener('click', () => {
 });
 
 backBtn.addEventListener('click', () => {
+    clearAutoRestart();
     stopCountdown();
     feedback.classList.add('hidden');
     hourglass.classList.remove('running');
@@ -297,8 +331,8 @@ function resetSandInstant() {
     // Zera o estado das animações CSS de forma imediata (sem transição).
     topSand.style.transition = 'none';
     bottomSand.style.transition = 'none';
-    topSand.style.transform = 'scaleY(1)'; // Topo cheio
-    bottomSand.style.transform = 'scaleY(0)'; // Base vazia
+    topSand.style.transform = 'scaleY(1)'; // Topo cheio (100%)
+    bottomSand.style.transform = 'scaleY(0)'; // Base vazia (0%)
 
     // Força o recálculo de estilo para o reset valer antes da animação.
     // (Elementos SVG não têm offsetWidth; getBoundingClientRect cumpre o papel.)
@@ -320,7 +354,9 @@ function startTimer() {
     topSand.style.transition = `transform ${totalTime}s linear`;
     bottomSand.style.transition = `transform ${totalTime}s linear`;
 
-    // Aciona a movimentação da areia.
+    // Aciona a movimentação da areia. As duas partes usam a mesma duração e a
+    // mesma curva linear, então a proporção é sempre complementar:
+    // topo 100%/base 0% → 60%/40% → 50%/50% → 30%/70% → 0%/100%.
     topSand.style.transform = 'scaleY(0)'; // Topo esvazia
     bottomSand.style.transform = 'scaleY(1)'; // Base enche
 
@@ -346,12 +382,30 @@ function finishTimer() {
     stopCountdown();
     timeRemaining = 0;
     updateDisplay();
+
+    // Garante o estado final exato: topo vazio (0%) e vidro inferior cheio (100%).
+    topSand.style.transition = 'none';
+    topSand.style.transform = 'scaleY(0)';
+    bottomSand.style.transition = 'none';
+    bottomSand.style.transform = 'scaleY(1)';
+
     hourglass.classList.remove('running');
     feedback.classList.remove('hidden');
 
     playAlarm();
     vibrateAlarm();
     showNotification();
+
+    // Reinício automático: dá tempo de ver o aviso e ouvir o alarme.
+    clearAutoRestart();
+    if (autoRestart) {
+        autoRestartTimeout = setTimeout(() => {
+            autoRestartTimeout = null;
+            if (autoRestart && !timerScreen.classList.contains('hidden')) {
+                flipAndRestart();
+            }
+        }, 1200);
+    }
 }
 
 function updateDisplay() {
@@ -362,6 +416,7 @@ function updateDisplay() {
    Virar a ampulheta
    ============================================================ */
 function flipAndRestart() {
+    clearAutoRestart();
     isAnimatingFlip = true;
     stopCountdown();
     feedback.classList.add('hidden');
@@ -373,6 +428,12 @@ function flipAndRestart() {
     hourglass.style.transform = 'rotate(180deg)';
 
     setTimeout(() => {
+        // Se o usuário voltou para a configuração durante o giro, não reinicia.
+        if (timerScreen.classList.contains('hidden')) {
+            isAnimatingFlip = false;
+            return;
+        }
+
         // Truque visual: como a ampulheta é simétrica, a troca instantânea
         // de 180° para 0° não é percebida pelo usuário.
         hourglass.style.transition = 'none';

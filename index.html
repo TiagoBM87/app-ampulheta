@@ -55,6 +55,14 @@
                 <line x1="16" y1="9" x2="22" y2="15"/>
             </svg>
         </button>
+        <button id="auto-toggle" class="icon-btn" type="button" aria-pressed="false" aria-label="Ativar reinício automático" title="Reinício automático desativado">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M17 2l4 4-4 4"/>
+                <path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+                <path d="M7 22l-4-4 4-4"/>
+                <path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+            </svg>
+        </button>
         <button id="theme-toggle" class="icon-btn" type="button" aria-label="Alternar tema" title="Alternar tema">
             <svg class="icon icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <circle cx="12" cy="12" r="4"/>
@@ -105,13 +113,40 @@
         <div id="hourglass-wrapper" role="button" tabindex="0" aria-label="Virar a ampulheta e reiniciar a contagem">
             <svg id="hourglass" viewBox="16 20 168 300" aria-hidden="true" focusable="false">
                 <defs>
-                    <linearGradient id="frameGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" style="stop-color: var(--accent-2)"/>
-                        <stop offset="100%" style="stop-color: var(--accent)"/>
+                    <!-- Madeira: gradiente + veios para dar volume e textura -->
+                    <linearGradient id="woodPostGrad" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" style="stop-color: var(--wood-dark)"/>
+                        <stop offset="30%" style="stop-color: var(--wood-light)"/>
+                        <stop offset="62%" style="stop-color: var(--wood-mid)"/>
+                        <stop offset="100%" style="stop-color: var(--wood-dark)"/>
                     </linearGradient>
-                    <linearGradient id="sandGrad" x1="0" y1="0" x2="0" y2="1">
+                    <linearGradient id="woodDiscGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" style="stop-color: var(--wood-light)"/>
+                        <stop offset="52%" style="stop-color: var(--wood-mid)"/>
+                        <stop offset="100%" style="stop-color: var(--wood-dark)"/>
+                    </linearGradient>
+                    <pattern id="woodGrainV" width="5" height="16" patternUnits="userSpaceOnUse">
+                        <path d="M1 0 C 2 4 0 6 1 10 C 2 13 0 14 1 16"
+                              fill="none" stroke="var(--wood-grain)" stroke-width="0.9"/>
+                        <path d="M3.6 0 C 4.4 5 3 7 4 11 C 4.6 13 3.4 15 4 16"
+                              fill="none" stroke="var(--wood-grain)" stroke-width="0.6" opacity="0.7"/>
+                    </pattern>
+                    <pattern id="woodGrainH" width="18" height="5" patternUnits="userSpaceOnUse">
+                        <path d="M0 1.5 C 5 0.6 8 2.4 13 1.5 C 15 1.1 16.5 1.6 18 1.5"
+                              fill="none" stroke="var(--wood-grain)" stroke-width="0.8"/>
+                        <path d="M0 3.6 C 4 2.9 7 4.4 11 3.6 C 14 3 16 4.1 18 3.4"
+                              fill="none" stroke="var(--wood-grain)" stroke-width="0.55" opacity="0.65"/>
+                    </pattern>
+
+                    <linearGradient id="sandGradTop" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%" style="stop-color: var(--sand-light)"/>
-                        <stop offset="55%" style="stop-color: var(--sand-mid)"/>
+                        <stop offset="45%" style="stop-color: var(--sand-mid)"/>
+                        <stop offset="100%" style="stop-color: var(--sand-dark)"/>
+                    </linearGradient>
+                    <linearGradient id="sandGradBottom" gradientUnits="userSpaceOnUse"
+                                    x1="100" y1="170" x2="100" y2="302">
+                        <stop offset="0%" style="stop-color: var(--sand-light)"/>
+                        <stop offset="45%" style="stop-color: var(--sand-mid)"/>
                         <stop offset="100%" style="stop-color: var(--sand-dark)"/>
                     </linearGradient>
                     <linearGradient id="streamGrad" gradientUnits="userSpaceOnUse" x1="100" y1="170" x2="100" y2="270">
@@ -140,6 +175,8 @@
                 <!-- Hastes laterais (atrás do vidro) -->
                 <rect class="post" x="30" y="38" width="11" height="256" rx="5.5"/>
                 <rect class="post" x="159" y="38" width="11" height="256" rx="5.5"/>
+                <rect class="post-grain" x="30" y="38" width="11" height="256" rx="5.5"/>
+                <rect class="post-grain" x="159" y="38" width="11" height="256" rx="5.5"/>
 
                 <!-- Corpo de vidro -->
                 <path class="glass-body" d="M44 52 C44 44 50 38 58 38 L142 38 C150 38 156 44 156 52
@@ -151,7 +188,7 @@
 
                 <!-- Areia do vidro superior (escoa para baixo) -->
                 <g clip-path="url(#bulb-top)">
-                    <path class="sand top-sand" d="M10 38 L100 170 L190 38 Z"/>
+                    <path class="sand top-sand" d="M8 38 Q 100 56 192 38 L100 170 Z"/>
                 </g>
 
                 <!-- Fio de areia e grãos caindo -->
@@ -162,9 +199,10 @@
                     <circle class="grain grain-c" cx="100" cy="173" r="1.1"/>
                 </g>
 
-                <!-- Areia acumulada no vidro inferior -->
+                <!-- Areia acumulada no vidro inferior: nível sobe de forma uniforme.
+                     O retângulo é maior que o vidro e o recorte define o contorno. -->
                 <g clip-path="url(#bulb-bottom)">
-                    <path class="sand bottom-sand" d="M10 302 L100 170 L190 302 Z"/>
+                    <rect class="sand bottom-sand" x="0" y="170" width="200" height="132"/>
                 </g>
 
                 <!-- Contorno e reflexos do vidro -->
@@ -182,6 +220,8 @@
                 <!-- Discos de madeira -->
                 <rect class="disc" x="18" y="22" width="164" height="26" rx="13"/>
                 <rect class="disc" x="18" y="292" width="164" height="26" rx="13"/>
+                <rect class="disc-grain" x="18" y="22" width="164" height="26" rx="13"/>
+                <rect class="disc-grain" x="18" y="292" width="164" height="26" rx="13"/>
             </svg>
         </div>
 

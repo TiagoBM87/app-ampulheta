@@ -16,9 +16,13 @@
     --success: #66bb6a;
     --success-surface: rgba(102, 187, 106, 0.12);
     --border: rgba(255, 255, 255, 0.1);
-    --sand-light: #ffd180;
-    --sand-mid: #ffb74d;
-    --sand-dark: #f57c00;
+    --sand-light: #f2e3c2;
+    --sand-mid: #ddc296;
+    --sand-dark: #c09a68;
+    --wood-light: #c99a6a;
+    --wood-mid: #9a6a40;
+    --wood-dark: #5e3b22;
+    --wood-grain: rgba(58, 33, 14, 0.55);
     --glass-a: rgba(255, 255, 255, 0.16);
     --glass-b: rgba(255, 255, 255, 0.04);
     --glass-line: rgba(255, 255, 255, 0.34);
@@ -43,9 +47,13 @@
     --success: #2e7d32;
     --success-surface: rgba(46, 125, 50, 0.1);
     --border: rgba(42, 33, 20, 0.14);
-    --sand-light: #ffcc80;
-    --sand-mid: #ffb74d;
-    --sand-dark: #e65100;
+    --sand-light: #efdcb6;
+    --sand-mid: #d9bc8b;
+    --sand-dark: #b78e5c;
+    --wood-light: #bd8c5c;
+    --wood-mid: #8e5f38;
+    --wood-dark: #573619;
+    --wood-grain: rgba(50, 28, 10, 0.5);
     --glass-a: rgba(90, 60, 20, 0.16);
     --glass-b: rgba(90, 60, 20, 0.03);
     --glass-line: rgba(90, 60, 20, 0.32);
@@ -170,6 +178,13 @@ body {
 #count-toggle.is-off .icon-eye { display: none; }
 #count-toggle.is-off .icon-eye-off { display: block; }
 #count-toggle.is-off { color: var(--muted); }
+
+/* Reinício automático ativo */
+#auto-toggle.is-on {
+    color: var(--accent);
+    border-color: var(--accent);
+    box-shadow: 0 8px 20px var(--glow);
+}
 
 /* ============================================================
    Tela de configuração
@@ -445,17 +460,31 @@ h1 {
 
 /* Armação de madeira */
 #hourglass .disc {
-    fill: url(#frameGrad);
+    fill: url(#woodDiscGrad);
 }
 
 #hourglass .post {
-    fill: var(--accent);
-    opacity: 0.75;
+    fill: url(#woodPostGrad);
+}
+
+#hourglass .disc-grain,
+#hourglass .post-grain {
+    pointer-events: none;
+}
+
+#hourglass .disc-grain {
+    fill: url(#woodGrainH);
+    opacity: 0.5;
+}
+
+#hourglass .post-grain {
+    fill: url(#woodGrainV);
+    opacity: 0.45;
 }
 
 /* Areia */
 #hourglass .sand {
-    fill: url(#sandGrad);
+    fill: url(#sandGradTop);
     transform-box: fill-box;
     transform-origin: bottom;
 }
@@ -464,7 +493,9 @@ h1 {
     transform: scaleY(1);
 }
 
+/* O nível da areia sobe de forma uniforme, acompanhando o esvaziamento do topo. */
 #hourglass .bottom-sand {
+    fill: url(#sandGradBottom);
     transform: scaleY(0);
 }
 
@@ -598,6 +629,22 @@ h1 {
 
     #feedback {
         font-size: 1rem;
+    }
+}
+
+/* Telas bem estreitas: a barra tem 4 botões. O botão Voltar fica só com o
+   ícone (o rótulo continua no aria-label) para não haver sobreposição. */
+@media (max-width: 360px) {
+    .back-btn {
+        width: 44px;
+        height: 44px;
+        padding: 0;
+        gap: 0;
+        justify-content: center;
+    }
+
+    .back-btn span {
+        display: none;
     }
 }
 
