@@ -31,6 +31,8 @@ let timeRemaining = 0;    // em segundos
 let endTime = 0;          // timestamp do fim
 let countdownInterval = null;
 let isAnimatingFlip = false;
+let isPaused = false;
+let pausedRemainingMs = 0;
 let soundEnabled = true;
 let countVisible = true;
 let autoRestart = false;
@@ -311,6 +313,9 @@ startBtn.addEventListener('click', () => {
 backBtn.addEventListener('click', () => {
     clearAutoRestart();
     stopCountdown();
+    isPaused = false;
+    pausedRemainingMs = 0;
+    resetHourglassRotation();
     feedback.classList.add('hidden');
     hourglass.classList.remove('running');
     timerScreen.classList.add('hidden');
@@ -341,7 +346,10 @@ function resetSandInstant() {
 
 function startTimer() {
     stopCountdown();
+    resetHourglassRotation();
 
+    isPaused = false;
+    pausedRemainingMs = 0;
     timeRemaining = totalTime;
     endTime = Date.now() + totalTime * 1000;
     updateDisplay();
@@ -380,6 +388,8 @@ function tick() {
 
 function finishTimer() {
     stopCountdown();
+    isPaused = false;
+    pausedRemainingMs = 0;
     timeRemaining = 0;
     updateDisplay();
 
@@ -388,6 +398,7 @@ function finishTimer() {
     topSand.style.transform = 'scaleY(0)';
     bottomSand.style.transition = 'none';
     bottomSand.style.transform = 'scaleY(1)';
+    resetHourglassRotation();
 
     hourglass.classList.remove('running');
     feedback.classList.remove('hidden');
@@ -410,6 +421,119 @@ function finishTimer() {
 
 function updateDisplay() {
     timeLeftDisplay.textContent = formatClock(timeRemaining);
+}
+
+/* ============================================================
+   Pausar e retomar
+   ============================================================ */
+function currentScaleY(element) {
+    const transform = getComputedStyle(element).transform;
+    if (!transform || transform === 'none') return 1;
+
+    const match = transform.match(/matrix\(([^)]+)\)/);
+    if (!match) return 1;
+
+    const values = match[1].split(',').map(Number);
+    return values.length === 6 ? values[3] : 1;
+}
+
+function freezeSand() {
+    // Congela as duas partes exatamente no ponto em que a animação estava.
+    const topScale = currentScaleY(topSand);
+    const bottomScale = currentScaleY(bottomSand);
+
+    topSand.style.transition = 'none';
+    bottomSand.style.transition = 'none';
+    topSand.style.transform = `scaleY(${topScale})`;
+    bottomSand.style.transform = `scaleY(${bottomScale})`;
+
+    // Força o recálculo para que a retomada parta do estado congelado.
+    void topSand.getBoundingClientRect();
+    void bottomSand.getBoundingClientRect();
+}
+
+const TILT_EASING = 'cubic-bezier(0.45, 0.05, 0.35, 1)';
+const TILT_DURATION = '0.5s';
+
+function pauseTiltScale() {
+    const width = hourglass.clientWidth;
+    const height = hourglass.clientHeight;
+    if (!width || !height) return 0.6;
+
+    const wrapper = hourglassWrapper.getBoundingClientRect();
+    if (!wrapper.width || !wrapper.height) return 0.6;
+
+    // Ao girar 90°, largura e altura do desenho se invertem. Esta escala
+    // mantém a ampulheta inteira visível dentro da área do palco.
+    return Math.min(
+        1,
+        (wrapper.width * 0.9) / height,
+        (wrapper.height * 0.9) / width
+    );
+}
+
+function tiltHourglassForPause() {
+    const scale = pauseTiltScale().toFixed(3);
+    hourglass.style.transition = `transform ${TILT_DURATION} ${TILT_EASING}`;
+    hourglass.style.transform = `rotate(90deg) scale(${scale})`;
+}
+
+function restoreHourglassRotation() {
+    hourglass.style.transition = `transform ${TILT_DURATION} ${TILT_EASING}`;
+    hourglass.style.transform = 'rotate(0deg) scale(1)';
+}
+
+function resetHourglassRotation() {
+    hourglass.style.transition = 'none';
+    hourglass.style.transform = 'rotate(0deg)';
+}
+
+function pauseTimer() {
+    const remainingMs = Math.max(0, endTime - Date.now());
+
+    if (remainingMs <= 0) {
+        finishTimer();
+        return;
+    }
+
+    pausedRemainingMs = remainingMs;
+    timeRemaining = Math.ceil(remainingMs / 1000);
+    updateDisplay();
+    stopCountdown();
+    freezeSand();
+    tiltHourglassForPause();
+    hourglass.classList.remove('running');
+    isPaused = true;
+}
+
+function resumeTimer() {
+    if (!isPaused) return;
+
+    const remainingMs = pausedRemainingMs;
+    if (remainingMs <= 0) {
+        finishTimer();
+        return;
+    }
+
+    isPaused = false;
+    pausedRemainingMs = 0;
+    endTime = Date.now() + remainingMs;
+    restoreHourglassRotation();
+
+    // Retoma a areia a partir do ponto congelado, com a duração restante.
+    const duration = remainingMs / 1000;
+    topSand.style.transition = `transform ${duration}s linear`;
+    bottomSand.style.transition = `transform ${duration}s linear`;
+
+    void topSand.getBoundingClientRect();
+    void bottomSand.getBoundingClientRect();
+
+    topSand.style.transform = 'scaleY(0)';
+    bottomSand.style.transform = 'scaleY(1)';
+
+    hourglass.classList.add('running');
+    stopCountdown();
+    countdownInterval = setInterval(tick, 200);
 }
 
 /* ============================================================
@@ -445,15 +569,32 @@ function flipAndRestart() {
     }, 600);
 }
 
-hourglassWrapper.addEventListener('click', () => {
-    if (isAnimatingFlip) return; // Evita cliques duplos durante a animação
+function handleHourglassActivation() {
+    if (isAnimatingFlip || timerScreen.classList.contains('hidden')) return;
+
+    // Em andamento: pausa o tempo e congela a areia.
+    if (hourglass.classList.contains('running')) {
+        pauseTimer();
+        return;
+    }
+
+    // Pausado no meio da contagem: retoma de onde parou.
+    if (isPaused) {
+        resumeTimer();
+        return;
+    }
+
+    // Tempo esgotado (ou ainda não iniciado): gira e reinicia a contagem.
+    // Isso cobre o caso em que o reinício automático está desligado.
     flipAndRestart();
-});
+}
+
+hourglassWrapper.addEventListener('click', handleHourglassActivation);
 
 hourglassWrapper.addEventListener('keydown', (event) => {
     if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
-        if (!isAnimatingFlip) flipAndRestart();
+        handleHourglassActivation();
     }
 });
 
