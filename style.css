@@ -353,10 +353,37 @@ h1 {
     height: 18px;
 }
 
+/* Palco do timer: a ampulheta ocupa todo o espaço restante (cerca de 80% da
+   altura em telas altas). O rodapé (contagem + aviso) tem altura reservada,
+   então a ampulheta não se desloca quando o "Tempo Esgotado!" aparece. */
+#timer-screen {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto auto;
+    justify-items: center;
+    align-items: center;
+    height: 100vh;
+    height: 100dvh;
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding: 72px 8px 16px;
+    padding:
+        calc(72px + env(safe-area-inset-top))
+        calc(8px + env(safe-area-inset-right))
+        calc(16px + env(safe-area-inset-bottom))
+        calc(8px + env(safe-area-inset-left));
+    overflow: hidden;
+}
+
 /* Componente Ampulheta */
 #hourglass-wrapper {
     position: relative;
-    padding: 32px 42px 30px;
+    align-self: stretch;
+    justify-self: stretch;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
     border-radius: 28px;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent; /* Remove highlight azul no mobile */
@@ -374,15 +401,18 @@ h1 {
 }
 
 #hourglass-wrapper:active {
-    transform: scale(0.98);
+    transform: scale(0.995);
 }
 
 #hourglass {
     position: relative;
     z-index: 1;
     display: block;
-    width: clamp(132px, 37vw, 178px);
-    height: auto;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    max-height: 80dvh;
     overflow: visible;
     transform-origin: center;
     filter: drop-shadow(0 18px 24px rgba(0, 0, 0, 0.28));
@@ -480,24 +510,27 @@ h1 {
 
 /* Mostrador de tempo e animação final */
 #time-left {
-    margin-top: 30px;
+    grid-row: 2;
+    margin-top: 6px;
     font-size: clamp(2.4rem, 9vw, 3.4rem);
     font-weight: 700;
     font-variant-numeric: tabular-nums;
     letter-spacing: 0.04em;
 }
 
-/* Modo "só ampulheta": esconde a contagem e dá mais destaque ao desenho */
+/* Modo "só ampulheta": esconde a contagem e libera espaço para o desenho */
 :root[data-count="hidden"] #time-left {
     display: none;
 }
 
-:root[data-count="hidden"] #hourglass {
-    width: clamp(152px, 44vw, 208px);
+:root[data-count="hidden"] #timer-screen {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
 }
 
 #feedback {
-    margin-top: 24px;
+    grid-row: 3;
+    margin-top: 12px;
     padding: 10px 24px;
     border-radius: 999px;
     border: 1px solid currentColor;
@@ -507,6 +540,13 @@ h1 {
     font-weight: 700;
     letter-spacing: 0.02em;
     animation: pulse 0.9s ease-in-out infinite alternate;
+}
+
+/* O aviso já ocupa o seu espaço antes de aparecer: a ampulheta fica parada. */
+#feedback.hidden {
+    display: block !important;
+    visibility: hidden;
+    animation: none;
 }
 
 @keyframes pulse {
@@ -553,11 +593,30 @@ h1 {
     }
 
     #hourglass-wrapper {
-        padding: 30px 34px;
+        padding: 0;
     }
 
     #feedback {
         font-size: 1rem;
+    }
+}
+
+/* Telas de altura média: compacta o rodapé para a ampulheta crescer mais */
+@media (max-height: 700px) {
+    #timer-screen {
+        padding-top: calc(64px + env(safe-area-inset-top));
+        padding-bottom: calc(10px + env(safe-area-inset-bottom));
+    }
+
+    #time-left {
+        margin-top: 2px;
+        font-size: clamp(1.9rem, 7vh, 2.6rem);
+    }
+
+    #feedback {
+        margin-top: 8px;
+        padding: 8px 18px;
+        font-size: 0.95rem;
     }
 }
 
@@ -609,28 +668,44 @@ h1 {
         font-size: 1.05rem;
     }
 
+    #timer-screen {
+        padding-top: calc(52px + env(safe-area-inset-top));
+        padding-bottom: calc(8px + env(safe-area-inset-bottom));
+    }
+
     #hourglass-wrapper {
-        padding: 20px 28px;
-    }
-
-    #hourglass {
-        width: clamp(84px, 24vh, 120px);
-    }
-
-    /* No modo "só ampulheta", o desenho cresce mas ainda cabe na tela baixa. */
-    :root[data-count="hidden"] #hourglass {
-        width: clamp(100px, 30vh, 146px);
+        padding: 0;
     }
 
     #time-left {
-        margin-top: 10px;
-        font-size: clamp(1.8rem, 8vh, 2.4rem);
+        margin-top: 2px;
+        font-size: clamp(1.7rem, 7vh, 2.2rem);
     }
 
     #feedback {
-        margin-top: 10px;
-        padding: 8px 18px;
-        font-size: 0.95rem;
+        margin-top: 6px;
+        padding: 6px 16px;
+        font-size: 0.9rem;
+    }
+}
+
+/* Celular na horizontal: sobra pouca altura. Como a ampulheta fica estreita e
+   centralizada, pode subir mais sem encostar nos botões dos cantos. */
+@media (max-height: 560px) and (orientation: landscape) {
+    #timer-screen {
+        padding-top: calc(8px + env(safe-area-inset-top));
+        padding-bottom: calc(6px + env(safe-area-inset-bottom));
+    }
+
+    #time-left {
+        margin-top: 0;
+        font-size: clamp(1.35rem, 6vh, 1.8rem);
+    }
+
+    #feedback {
+        margin-top: 4px;
+        padding: 4px 14px;
+        font-size: 0.85rem;
     }
 }
 

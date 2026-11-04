@@ -1,5 +1,5 @@
 /* Service Worker — cache do app shell da Ampulheta */
-const CACHE_NAME = 'ampulheta-v2';
+const CACHE_NAME = 'ampulheta-v3';
 
 const APP_SHELL = [
     './',
