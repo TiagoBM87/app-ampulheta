@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Timer Ampulheta</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Tela 1: Configuração -->
+    <main id="setup-screen" class="screen">
+        <h1>Ampulheta</h1>
+        <p>Escolha o tempo (máx 60s)</p>
+        <div class="input-group">
+            <input type="number" id="time-input" min="1" max="60" value="30">
+            <span>segundos</span>
+        </div>
+        <button id="start-btn">Iniciar Timer</button>
+    </main>
+
+    <!-- Tela 2: Execução -->
+    <main id="timer-screen" class="screen hidden">
+        <div id="hourglass-wrapper">
+            <div id="hourglass">
+                <!-- Parte superior da ampulheta -->
+                <div class="glass top-glass">
+                    <div class="sand top-sand"></div>
+                </div>
+                <!-- Parte inferior da ampulheta -->
+                <div class="glass bottom-glass">
+                    <div class="sand bottom-sand"></div>
+                </div>
+            </div>
+        </div>
+        <h2 id="time-left">00:00</h2>
+        <div id="feedback" class="hidden">Tempo Esgotado!</div>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>

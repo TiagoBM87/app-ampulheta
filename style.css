@@ -1,0 +1,127 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background-color: #121212;
+    color: #ffffff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
+    touch-action: manipulation; /* Otimiza interações de toque mobile */
+}
+
+.screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* UI da Tela Inicial */
+h1 { font-size: 2.2rem; color: #ff9800; margin-bottom: 10px; }
+p { color: #aaaaaa; margin-bottom: 30px; }
+.input-group { margin-bottom: 40px; }
+input {
+    font-size: 3.5rem;
+    text-align: center;
+    width: 130px;
+    padding: 10px;
+    border-radius: 12px;
+    border: 2px solid #ff9800;
+    background: #1e1e1e;
+    color: #fff;
+    outline: none;
+}
+.input-group span { display: block; margin-top: 10px; color: #888; }
+
+button {
+    background-color: #ff9800;
+    color: #121212;
+    border: none;
+    padding: 18px 50px;
+    font-size: 1.3rem;
+    font-weight: bold;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+button:active { transform: scale(0.95); }
+
+/* Componente Ampulheta */
+#hourglass-wrapper {
+    padding: 30px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent; /* Remove highlight azul no mobile */
+}
+
+#hourglass {
+    display: flex;
+    flex-direction: column;
+    width: 140px;
+    height: 280px;
+    /* A transição será injetada via JS durante o giro */
+}
+
+.glass {
+    width: 100%;
+    height: 50%;
+    position: relative;
+    overflow: hidden;
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Máscaras geométricas para criar o formato do vidro */
+.top-glass { clip-path: polygon(0 0, 100% 0, 50% 100%); }
+.bottom-glass { clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+
+.sand {
+    width: 100%;
+    height: 100%;
+    background-color: #ff9800;
+    position: absolute;
+    left: 0;
+}
+
+.top-sand {
+    bottom: 0;
+    transform-origin: bottom;
+}
+
+.bottom-sand {
+    bottom: 0;
+    transform-origin: bottom;
+    transform: scaleY(0);
+}
+
+/* Mostrador de Tempo e Animação Final */
+#time-left {
+    margin-top: 30px;
+    font-size: 3rem;
+    font-variant-numeric: tabular-nums;
+}
+
+#feedback {
+    margin-top: 20px;
+    font-size: 1.8rem;
+    color: #4caf50;
+    font-weight: bold;
+    animation: pulse 0.8s infinite alternate;
+}
+
+@keyframes pulse {
+    from { opacity: 0.6; transform: scale(1); }
+    to { opacity: 1; transform: scale(1.1); }
+}
