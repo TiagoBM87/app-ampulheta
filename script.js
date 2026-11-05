@@ -22,6 +22,7 @@ const themeToggle = document.getElementById('theme-toggle');
 const soundToggle = document.getElementById('sound-toggle');
 const countToggle = document.getElementById('count-toggle');
 const autoToggle = document.getElementById('auto-toggle');
+const restartBtn = document.getElementById('restart-btn');
 
 /* ============================================================
    Estado
@@ -155,6 +156,11 @@ autoToggle.addEventListener('click', () => {
     if (!autoRestart) {
         clearAutoRestart();
     }
+});
+
+restartBtn.addEventListener('click', () => {
+    if (timerScreen.classList.contains('hidden')) return;
+    restartCount();
 });
 
 /* ============================================================

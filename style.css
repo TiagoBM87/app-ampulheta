@@ -186,6 +186,17 @@ body {
     box-shadow: 0 8px 20px var(--glow);
 }
 
+/* Botão de reiniciar */
+#restart-btn {
+    color: var(--accent-2);
+    border-color: var(--border);
+}
+
+#restart-btn:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+}
+
 /* ============================================================
    Tela de configuração
    ============================================================ */
