@@ -455,32 +455,14 @@ function freezeSand() {
 const TILT_EASING = 'cubic-bezier(0.45, 0.05, 0.35, 1)';
 const TILT_DURATION = '0.5s';
 
-function pauseTiltScale() {
-    const width = hourglass.clientWidth;
-    const height = hourglass.clientHeight;
-    if (!width || !height) return 0.6;
-
-    const wrapper = hourglassWrapper.getBoundingClientRect();
-    if (!wrapper.width || !wrapper.height) return 0.6;
-
-    // Ao girar 90°, largura e altura do desenho se invertem. Esta escala
-    // mantém a ampulheta inteira visível dentro da área do palco.
-    return Math.min(
-        1,
-        (wrapper.width * 0.9) / height,
-        (wrapper.height * 0.9) / width
-    );
-}
-
 function tiltHourglassForPause() {
-    const scale = pauseTiltScale().toFixed(3);
     hourglass.style.transition = `transform ${TILT_DURATION} ${TILT_EASING}`;
-    hourglass.style.transform = `rotate(90deg) scale(${scale})`;
+    hourglass.style.transform = 'rotate(90deg)';
 }
 
 function restoreHourglassRotation() {
     hourglass.style.transition = `transform ${TILT_DURATION} ${TILT_EASING}`;
-    hourglass.style.transform = 'rotate(0deg) scale(1)';
+    hourglass.style.transform = 'rotate(0deg)';
 }
 
 function resetHourglassRotation() {
@@ -567,6 +549,39 @@ function flipAndRestart() {
         startTimer();
         isAnimatingFlip = false;
     }, 600);
+}
+
+/* ============================================================
+    Reiniciar contagem (volta para posição inicial)
+    ============================================================ */
+function restartCount() {
+    // Para qualquer contagem ativa, reinicia a ampulheta para o estado inicial
+    // com os mesmos valores configurados originalmente (totalTime, unitSelect, etc.)
+    clearAutoRestart();
+    stopCountdown();
+    isPaused = false;
+    pausedRemainingMs = 0;
+    timeRemaining = totalTime;
+    endTime = Date.now() + totalTime * 1000;
+    resetHourglassRotation();
+    feedback.classList.add('hidden');
+    hourglass.classList.remove('running');
+
+    // Reset instantâneo da areia para o estado inicial (topo cheio, base vazia)
+    resetSandInstant();
+
+    // Aplica a transição com base no tempo escolhido (mesmo que startTimer)
+    topSand.style.transition = `transform ${totalTime}s linear`;
+    bottomSand.style.transition = `transform ${totalTime}s linear`;
+
+    // Inicia a movimentação da areia: topo esvazia, base enche
+    topSand.style.transform = 'scaleY(0)'; // Topo esvazia
+    bottomSand.style.transform = 'scaleY(1)'; // Base enche
+
+    // Inicia o contador com base no relógio real
+    countdownInterval = setInterval(tick, 200);
+    updateDisplay();
+    hourglass.classList.add('running');
 }
 
 function handleHourglassActivation() {
