@@ -31,6 +31,7 @@ let totalTime = 0;        // em segundos
 let timeRemaining = 0;    // em segundos
 let endTime = 0;          // timestamp do fim
 let countdownInterval = null;
+let displayFrame = null;   // animação da contagem em milissegundos
 let isAnimatingFlip = false;
 let isPaused = false;
 let pausedRemainingMs = 0;
@@ -239,10 +240,12 @@ function showNotification() {
 /* ============================================================
    Formatação
    ============================================================ */
-function formatClock(totalSeconds) {
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+function formatClock(remainingMs) {
+    const ms = Math.max(0, Math.floor(remainingMs));
+    const minutes = Math.floor(ms / 60000);
+    const seconds = Math.floor(ms / 1000) % 60;
+    const millis = ms % 1000;
+    return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(millis).padStart(3, '0')}`;
 }
 
 function formatDuration(totalSeconds) {
@@ -333,6 +336,10 @@ function stopCountdown() {
         clearInterval(countdownInterval);
         countdownInterval = null;
     }
+    if (displayFrame !== null) {
+        cancelAnimationFrame(displayFrame);
+        displayFrame = null;
+    }
 }
 
 /* ============================================================
@@ -358,7 +365,7 @@ function startTimer() {
     pausedRemainingMs = 0;
     timeRemaining = totalTime;
     endTime = Date.now() + totalTime * 1000;
-    updateDisplay();
+    updateDisplay(totalTime * 1000);
     feedback.classList.add('hidden');
     hourglass.classList.add('running');
 
@@ -376,16 +383,17 @@ function startTimer() {
 
     // Inicia o contador com base no relógio real (evita atraso acumulado).
     countdownInterval = setInterval(tick, 200);
+    startDisplayAnimation();
 }
 
 function tick() {
-    const remainingMs = endTime - Date.now();
-    const remainingSeconds = Math.max(0, Math.ceil(remainingMs / 1000));
+    const remainingMs = Math.max(0, endTime - Date.now());
+    const remainingSeconds = Math.ceil(remainingMs / 1000);
 
     if (remainingSeconds !== timeRemaining) {
         timeRemaining = remainingSeconds;
-        updateDisplay();
     }
+    updateDisplay(remainingMs);
 
     if (remainingMs <= 0) {
         finishTimer();
@@ -397,7 +405,7 @@ function finishTimer() {
     isPaused = false;
     pausedRemainingMs = 0;
     timeRemaining = 0;
-    updateDisplay();
+    updateDisplay(0);
 
     // Garante o estado final exato: topo vazio (0%) e vidro inferior cheio (100%).
     topSand.style.transition = 'none';
@@ -425,8 +433,37 @@ function finishTimer() {
     }
 }
 
-function updateDisplay() {
-    timeLeftDisplay.textContent = formatClock(timeRemaining);
+function updateDisplay(remainingMs) {
+    // Sem argumento, usa os segundos conhecidos (ex.: 00:00.000 na abertura).
+    const ms = remainingMs === undefined ? timeRemaining * 1000 : remainingMs;
+    timeLeftDisplay.textContent = formatClock(ms);
+}
+
+// Os milissegundos são lidos a cada quadro, sempre a partir de `endTime`, para
+// não acumularem atraso. O intervalo de 200ms continua responsável pelo fim da
+// contagem — ele também funciona com a aba em segundo plano, onde o rAF para.
+function startDisplayAnimation() {
+    if (displayFrame !== null) {
+        cancelAnimationFrame(displayFrame);
+    }
+
+    function animate() {
+        if (isPaused || timerScreen.classList.contains('hidden')) {
+            displayFrame = null;
+            return;
+        }
+
+        const remainingMs = Math.max(0, endTime - Date.now());
+        updateDisplay(remainingMs);
+
+        if (remainingMs <= 0) {
+            displayFrame = null;
+            return;
+        }
+        displayFrame = requestAnimationFrame(animate);
+    }
+
+    displayFrame = requestAnimationFrame(animate);
 }
 
 /* ============================================================
@@ -486,7 +523,7 @@ function pauseTimer() {
 
     pausedRemainingMs = remainingMs;
     timeRemaining = Math.ceil(remainingMs / 1000);
-    updateDisplay();
+    updateDisplay(remainingMs);
     stopCountdown();
     freezeSand();
     tiltHourglassForPause();
@@ -522,6 +559,7 @@ function resumeTimer() {
     hourglass.classList.add('running');
     stopCountdown();
     countdownInterval = setInterval(tick, 200);
+    startDisplayAnimation();
 }
 
 /* ============================================================
@@ -586,7 +624,8 @@ function restartCount() {
 
     // Inicia o contador com base no relógio real
     countdownInterval = setInterval(tick, 200);
-    updateDisplay();
+    updateDisplay(totalTime * 1000);
+    startDisplayAnimation();
     hourglass.classList.add('running');
 }
 

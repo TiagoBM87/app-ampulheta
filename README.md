@@ -9,7 +9,7 @@ Timer visual em formato de ampulheta, feito com HTML, CSS e JavaScript puro — 
 - Animação de areia escoando de cima para baixo, proporcional ao tempo escolhido.
 - **Visual realista**: areia em tons naturais (bege/dourado), preenchimento uniforme e proporcional do vidro inferior e armação de madeira com veios e volume.
 - **Ampulheta em destaque**: ocupa cerca de **80% da altura da tela** (limitada pela largura no celular) e mantém a **posição fixa** quando o aviso de tempo esgotado aparece.
-- Contador digital no formato `MM:SS`, com cálculo baseado no relógio real (sem atraso acumulado).
+- Contador digital no formato `MM:SS.mmm`, com milissegundos e cálculo baseado no relógio real (sem atraso acumulado).
 - **Modo "só ampulheta"**: o botão de olho na barra superior oculta a contagem numérica e destaca o desenho.
 - **Reinício automático**: o botão de repetição na barra superior faz o timer recomeçar sozinho ao terminar, mantendo a mesma duração. A preferência é salva.
 - Toque/clique na ampulheta para **pausar** a contagem em andamento e tocar de novo para **retomar de onde parou**. Com o tempo esgotado, o toque **gira a ampulheta e reinicia** a contagem (funciona mesmo com o reinício automático desligado). Também via teclado: `Enter` ou `Espaço`.
@@ -73,7 +73,7 @@ app-ampulheta/
 - A areia usa um gradiente em tons de areia natural. O nível do vidro inferior sobe de forma uniforme e proporcional ao esvaziamento do topo (100%/0% → 50%/50% → 0%/100%), com a mesma duração e curva linear. A armação (discos e hastes) usa gradientes de madeira e padrões de veios (`<pattern>`), com variação de tom para dar volume de peça torneada.
 - A tela de execução usa **CSS Grid** com uma linha flexível para a ampulheta e um rodapé de altura reservada. O aviso "Tempo Esgotado!" ocupa o espaço dele mesmo antes de aparecer (`visibility: hidden`), então nada se desloca quando o tempo termina.
 - `script.js` sincroniza a duração da transição CSS com o tempo escolhido, de modo que a areia termina de escoar exatamente quando o tempo zera. Ao pausar, a transição é congelada no ponto exato (`getComputedStyle` + `transition: none`) e, ao retomar, continua a partir dali com a duração restante.
-- O contador usa um timestamp de término (`Date.now() + duração`) em vez de decrementar a cada segundo, evitando desvio causado por abas em segundo plano. Ao pausar, o tempo restante é guardado e o timestamp é recalculado na retomada.
+- O contador usa um timestamp de término (`Date.now() + duração`) em vez de decrementar a cada segundo, evitando desvio causado por abas em segundo plano. Os milissegundos são atualizados a cada quadro (`requestAnimationFrame`) a partir desse timestamp, enquanto o intervalo de 200ms continua verificando o fim da contagem mesmo com a aba oculta. Ao pausar, o tempo restante é guardado e o timestamp é recalculado na retomada.
 - Ao reiniciar (toque depois do fim ou reinício automático), a ampulheta gira 180° por 0,6s. Como o desenho é simétrico, a rotação volta a 0° logo depois, sem salto perceptível, e a contagem reinicia.
 - O alarme é sintetizado com `OscillatorNode` + `GainNode` da Web Audio API. O contexto de áudio é desbloqueado no clique em **Iniciar Timer**, respeitando as políticas dos navegadores.
 - Tema, som, visibilidade da contagem e reinício automático são salvos em `localStorage` (`ampulheta:theme`, `ampulheta:sound`, `ampulheta:count` e `ampulheta:auto`).
